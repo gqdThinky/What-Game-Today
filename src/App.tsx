@@ -1,13 +1,11 @@
 import {HeroSection} from "./components/HeroSection.tsx";
-import {Header} from "./components/Header.tsx";
 import {BackgroundDots} from "./components/Background.tsx";
 
 function App() {
 
     return (
-        <div>
+        <div className="app-container min-h-screen relative">
             <BackgroundDots numberOfDots={100} />
-            <Header />
             <HeroSection />
         </div>
     );
