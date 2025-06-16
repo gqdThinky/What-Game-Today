@@ -2,12 +2,12 @@ import React from 'react';
 
 const GlowingButton: React.FC = () => {
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <button
+        <div className="flex items-center justify-center mt-12">
+        <button
                 className="
           relative
           px-8 py-4
-          bg-orange-500
+          bg-gray-700
           text-white
           font-bold
           text-lg
@@ -15,13 +15,13 @@ const GlowingButton: React.FC = () => {
           transition-all
           duration-300
           ease-in-out
-          hover:bg-orange-400
+          hover:bg-gray-800
           hover:scale-105
           focus:outline-none
           focus:ring-4
-          focus:ring-orange-300
-          shadow-[0_0_20px_rgba(249,115,22,0.6),0_0_40px_rgba(249,115,22,0.4),0_0_60px_rgba(249,115,22,0.2)]
-          hover:shadow-[0_0_30px_rgba(249,115,22,0.8),0_0_60px_rgba(249,115,22,0.6),0_0_90px_rgba(249,115,22,0.4)]
+          focus:ring-gray-300
+          shadow-[0_0_20px_rgba(128,128,128,0.6),0_0_40px_rgba(128,128,128,0.4),0_0_60px_rgba(128,128,128,0.2)]
+          hover:shadow-[0_0_30px_rgba(128,128,128,0.8),0_0_60px_rgba(128,128,128,0.6),0_0_90px_rgba(128,128,128,0.4)]
           animate-pulse
         "
             >
@@ -30,9 +30,9 @@ const GlowingButton: React.FC = () => {
                 <div className="
           absolute
           inset-0
-          bg-orange-500
+          bg-gray-500
           rounded-lg
-          blur-xl
+          blur-lg
           opacity-50
           -z-10
           animate-pulse

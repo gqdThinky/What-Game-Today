@@ -19,7 +19,7 @@ export const HeroSection: React.FC = () => {
                 {/* Subtitle */}
                 <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-8 duration-1000 delay-300">
                     <p className="text-lg md:text-xl lg:text-2xl text-gray-400 opacity-75 font-medium max-w-4xl mx-auto leading-relaxed drop-shadow-md">
-                        Your go-to resource for gaming recommendations, reviews, and guides.
+                        Discover your next favorite game in seconds.
                     </p>
                 </div>
 
