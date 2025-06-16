@@ -1,4 +1,5 @@
 import type React from 'react';
+import GlowingButton from "./Buttons.tsx";
 
 export const HeroSection: React.FC = () => {
     return (
@@ -20,6 +21,11 @@ export const HeroSection: React.FC = () => {
                     <p className="text-lg md:text-xl lg:text-2xl text-gray-400 opacity-75 font-medium max-w-4xl mx-auto leading-relaxed drop-shadow-md">
                         Your go-to resource for gaming recommendations, reviews, and guides.
                     </p>
+                </div>
+
+                {/* Button */}
+                <div className="mt-8">
+                    <GlowingButton />
                 </div>
             </div>
 
