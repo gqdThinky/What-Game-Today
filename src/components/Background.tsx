@@ -12,9 +12,15 @@ interface Dot {
 
 interface BackgroundDotsProps {
     numberOfDots?: number;
+    backgroundImage?: string;
+    dotColor?: string; // Couleur des dots
 }
 
-export const BackgroundDots: React.FC<BackgroundDotsProps> = ({ numberOfDots = 60 }) => {
+export const BackgroundDots: React.FC<BackgroundDotsProps> = ({
+                                                                  numberOfDots = 60,
+                                                                  backgroundImage,
+                                                                  dotColor = 'rgb(251, 191, 36)', // amber-400 par défaut
+                                                              }) => {
     const [dots, setDots] = React.useState<Dot[]>([]);
 
     React.useEffect(() => {
@@ -49,24 +55,38 @@ export const BackgroundDots: React.FC<BackgroundDotsProps> = ({ numberOfDots = 6
 
         const intervalId = setInterval(animateDots, 80);
         return () => clearInterval(intervalId);
-    }, [numberOfDots]); // Ajout de numberOfDots comme dépendance
+    }, [numberOfDots]);
 
     return (
         <div className="absolute inset-0 overflow-hidden pointer-events-none animated-dots-container">
+            {/* Image de fond */}
+            {backgroundImage && (
+                <div
+                    className="absolute inset-0"
+                    style={{
+                        backgroundImage: `url(${backgroundImage})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                    }}
+                />
+            )}
+
+            {/* Dots animés */}
             {dots.map((dot) => (
                 <div
                     key={dot.id}
-                    className="absolute rounded-full bg-amber-200"
+                    className="absolute rounded-full"
                     style={{
                         left: `${dot.x}%`,
                         top: `${dot.y}%`,
                         width: `${dot.size}px`,
                         height: `${dot.size}px`,
+                        backgroundColor: dotColor,
                         opacity: dot.opacity,
                         transform: "translate(-50%, -50%)",
                         transition: "all 0.08s ease-out",
                         filter: "blur(0.5px)",
-                        boxShadow: "0 0 2px rgba(201, 194, 170, 0.3)",
                     }}
                 />
             ))}
