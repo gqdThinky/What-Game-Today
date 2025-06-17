@@ -5,7 +5,7 @@ const GlowingButton: React.FC = () => {
     const navigate = useNavigate();
 
     const handleClick = () => {
-        navigate('/questionnaire');
+        navigate('/survey');
     };
 
     return (

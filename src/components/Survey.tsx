@@ -18,10 +18,10 @@ interface Question {
 }
 
 interface QuestionnaireAnswers {
-    [key: string]: string | string[];
+    [key: string]: string | string[] | null;
 }
 
-const Questionnaire: React.FC = () => {
+const Survey: React.FC = () => {
     const navigate = useNavigate();
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
@@ -222,7 +222,6 @@ const Questionnaire: React.FC = () => {
     const shouldShowQuestion = (questionId: string): boolean => {
         const platformAnswer = answers.platform_preference;
 
-        // Show console_type only if console is selected
         if (questionId === 'console_type') {
             return Array.isArray(platformAnswer) ? platformAnswer.includes('console') : platformAnswer === 'console';
         }
@@ -245,7 +244,7 @@ const Questionnaire: React.FC = () => {
         return nextIndex;
     };
 
-    const handleAnswer = (value: string | string[]) => {
+    const handleAnswer = (value: string | string[] | null) => {
         const currentQuestion = availableQuestions[currentQuestionIndex];
 
         setAnswers(prev => ({
@@ -261,6 +260,10 @@ const Questionnaire: React.FC = () => {
             setCurrentQuestionIndex(nextIndex);
             setQuestionHistory(prev => [...prev, nextIndex]);
         }
+    };
+
+    const handleSkip = () => {
+        handleAnswer(null);
     };
 
     const handleMultipleChoice = (value: string, isSelected: boolean) => {
@@ -308,6 +311,7 @@ const Questionnaire: React.FC = () => {
     const currentQuestion = availableQuestions[currentQuestionIndex];
     const progressPercentage = ((currentQuestionIndex + 1) / availableQuestions.length) * 100;
     const currentMultipleAnswers = answers[currentQuestion.questionId] as string[] || [];
+    const isFirstQuestion = currentQuestionIndex === 0;
 
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 py-16 overflow-hidden">
@@ -526,6 +530,32 @@ const Questionnaire: React.FC = () => {
                         {questionHistory.length <= 1 ? '← Back to Home' : '← Previous'}
                     </button>
 
+                    {/* Skip button */}
+                    {!isFirstQuestion && (
+                        <button
+                            onClick={handleSkip}
+                            className="
+                                px-6 py-3
+                                bg-yellow-600/70
+                                backdrop-blur-sm
+                                text-white
+                                font-medium
+                                rounded-lg
+                                border
+                                border-yellow-500/50
+                                transition-all
+                                duration-300
+                                hover:bg-yellow-500/80
+                                hover:border-yellow-400/70
+                                focus:outline-none
+                                focus:ring-4
+                                focus:ring-yellow-400/30
+                            "
+                        >
+                            Skip ⏭️
+                        </button>
+                    )}
+
                     {currentQuestion.questionType === 'multiple_choice' && (
                         <button
                             onClick={proceedWithMultipleChoice}
@@ -577,4 +607,4 @@ const Questionnaire: React.FC = () => {
     );
 };
 
-export default Questionnaire;
+export default Survey;

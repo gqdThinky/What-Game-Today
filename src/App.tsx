@@ -1,7 +1,7 @@
 import {HeroSection} from "./components/HeroSection.tsx";
 import {BackgroundDots} from "./components/Background.tsx";
 import {BrowserRouter, Route, Routes} from "react-router-dom";
-import Questions from "./components/Questions.tsx";
+import Survey from "./components/Survey.tsx";
 
 function App() {
     return (
@@ -10,7 +10,7 @@ function App() {
                 <BackgroundDots numberOfDots={100} />
                 <Routes>
                     <Route path="/" element={<HeroSection />} />
-                    <Route path="/questionnaire" element={<Questions />} />
+                    <Route path="/survey" element={<Survey />} />
                 </Routes>
             </div>
         </BrowserRouter>
