@@ -242,7 +242,7 @@ const Questionnaire: React.FC = () => {
             nextIndex++;
         }
 
-        return nextIndex; // End of questionnaire
+        return nextIndex;
     };
 
     const handleAnswer = (value: string | string[]) => {
@@ -256,7 +256,6 @@ const Questionnaire: React.FC = () => {
         const nextIndex = getNextQuestionIndex();
 
         if (nextIndex >= availableQuestions.length) {
-            // End questionnaire
             navigate('/results', { state: { answers: { ...answers, [currentQuestion.questionId]: value } } });
         } else {
             setCurrentQuestionIndex(nextIndex);
@@ -316,21 +315,115 @@ const Questionnaire: React.FC = () => {
             <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-30 blur-3xl animate-pulse"></div>
             <div className="absolute -bottom-20 -right-20 w-60 h-60 rounded-full bg-gradient-to-tl from-purple-500/20 to-pink-500/20 opacity-25 blur-3xl animate-pulse delay-1000"></div>
 
-            {/* Progress Bar */}
-            <div className="fixed top-8 left-1/2 transform -translate-x-1/2 w-full max-w-md z-20">
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-full h-3 mx-6">
-                    <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
-                        style={{ width: `${progressPercentage}%` }}
-                    ></div>
+            {/* Enhanced Glassmorphism Progress Bar */}
+            <div className="fixed top-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-20 px-6">
+                {/* Main Progress Container */}
+                <div className="relative">
+                    {/* Glassmorphism Container */}
+                    <div className="
+                        relative p-6 rounded-2xl
+                        bg-white/[0.02]
+                        backdrop-blur-xl
+                        border border-white/[0.08]
+                        shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+                        hover:shadow-[0_12px_40px_0_rgba(31,38,135,0.5)]
+                        transition-all duration-500
+                        before:absolute before:inset-0 before:rounded-2xl
+                        before:bg-gradient-to-r before:from-blue-500/5 before:to-purple-500/5
+                        before:opacity-0 hover:before:opacity-100
+                        before:transition-opacity before:duration-300
+                    ">
+                        {/* Progress Header */}
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 animate-pulse"></div>
+                                <span className="text-white/90 font-semibold text-lg tracking-wide">
+                                    Question {currentQuestionIndex + 1}
+                                </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <span className="text-white/60 text-sm font-medium">
+                                    {Math.round(progressPercentage)}%
+                                </span>
+                                <div className="text-white/40 text-sm">
+                                    of {availableQuestions.length}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Progress Track */}
+                        <div className="relative">
+                            {/* Background Track */}
+                            <div className="
+                                relative h-3 rounded-full overflow-hidden
+                                bg-white/[0.03]
+                                backdrop-blur-sm
+                                border border-white/[0.05]
+                                shadow-inner
+                            ">
+                                {/* Animated Progress Fill */}
+                                <div
+                                    className="
+                                        h-full rounded-full transition-all duration-700 ease-out
+                                        bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500
+                                        shadow-[0_0_20px_rgba(59,130,246,0.6)]
+                                        relative overflow-hidden
+                                    "
+                                    style={{ width: `${progressPercentage}%` }}
+                                >
+                                    {/* Shimmer Effect */}
+                                    <div className="
+                                        absolute inset-0
+                                        bg-gradient-to-r from-transparent via-white/20 to-transparent
+                                        transform -skew-x-12
+                                        animate-[shimmer_2s_infinite]
+                                    "></div>
+                                </div>
+
+                                {/* Progress Dots */}
+                                <div className="absolute inset-0 flex items-center justify-between px-1">
+                                    {Array.from({ length: availableQuestions.length }, (_, i) => (
+                                        <div
+                                            key={i}
+                                            className={`
+                                                w-1.5 h-1.5 rounded-full transition-all duration-300
+                                                ${i <= currentQuestionIndex
+                                                ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]'
+                                                : 'bg-white/20'
+                                            }
+                                            `}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Glow Effect */}
+                            <div
+                                className="
+                                    absolute inset-0 rounded-full
+                                    bg-gradient-to-r from-blue-400/20 via-purple-500/20 to-pink-500/20
+                                    blur-sm opacity-60
+                                    transition-all duration-700
+                                "
+                                style={{
+                                    width: `${progressPercentage}%`,
+                                    filter: 'blur(8px)',
+                                }}
+                            ></div>
+                        </div>
+                    </div>
+
+                    {/* Floating Particles */}
+                    <div className="absolute -inset-4 pointer-events-none">
+                        <div className="absolute top-2 left-4 w-1 h-1 bg-blue-400 rounded-full opacity-60 animate-ping"></div>
+                        <div className="absolute bottom-2 right-6 w-0.5 h-0.5 bg-purple-400 rounded-full opacity-70 animate-ping delay-1000"></div>
+                        <div className="absolute top-1/2 right-2 w-0.5 h-0.5 bg-pink-400 rounded-full opacity-50 animate-ping delay-500"></div>
+                    </div>
                 </div>
-                <p className="text-center text-sm text-gray-400 mt-2">
-                    Question {currentQuestionIndex + 1} of {availableQuestions.length}
-                </p>
             </div>
 
             {/* Main Content */}
-            <div className="relative z-10 max-w-4xl mx-auto text-center animate-in fade-in-0 slide-in-from-bottom-8 duration-700">
+            <div className="relative z-10 max-w-4xl mx-auto text-center animate-in fade-in-0 slide-in-from-bottom-8 duration-700 mt-32">
                 {/* Question */}
                 <div className="mb-12">
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-purple-200 leading-tight tracking-tight drop-shadow-2xl mb-6">
@@ -473,6 +566,13 @@ const Questionnaire: React.FC = () => {
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
             </div>
+
+            <style jsx>{`
+                @keyframes shimmer {
+                    0% { transform: translateX(-100%) skewX(-12deg); }
+                    100% { transform: translateX(200%) skewX(-12deg); }
+                }
+            `}</style>
         </section>
     );
 };
