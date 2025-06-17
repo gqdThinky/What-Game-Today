@@ -209,25 +209,14 @@ const Questionnaire: React.FC = () => {
             "category": "game_length",
             "branchingLogic": null
         },
-        {
-            "questionId": "learning_curve",
-            "questionText": "How quickly do you want to learn a game's mechanics?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "quick", "label": "🚀 Quick and easy", "weight": 1},
-                {"value": "moderate", "label": "📈 Gradual learning", "weight": 2},
-                {"value": "complex", "label": "🧠 Complex and deep", "weight": 3}
-            ],
-            "importance": "medium",
-            "category": "difficulty_challenge",
-            "branchingLogic": "if quick -> avoid complex strategy games"
-        }
     ];
 
     useEffect(() => {
-        // Initialize with essential questions (high importance)
-        const essentialQuestions = allQuestions.filter(q => q.importance === 'high');
-        setAvailableQuestions(essentialQuestions);
+        const initialQuestions = allQuestions.filter(q => q.importance === 'high');
+        const mediumQuestions = allQuestions.filter(q => q.importance === 'medium');
+
+        const combinedQuestions = Array.from(new Set([...initialQuestions, ...mediumQuestions]));
+        setAvailableQuestions(combinedQuestions);
     }, []);
 
     const shouldShowQuestion = (questionId: string): boolean => {
@@ -267,19 +256,6 @@ const Questionnaire: React.FC = () => {
         const nextIndex = getNextQuestionIndex();
 
         if (nextIndex >= availableQuestions.length) {
-            // Add some medium importance questions if questionnaire is too short
-            if (Object.keys(answers).length < 8) {
-                const mediumQuestions = allQuestions.filter(q =>
-                    q.importance === 'medium' && !availableQuestions.find(aq => aq.questionId === q.questionId)
-                );
-                if (mediumQuestions.length > 0) {
-                    setAvailableQuestions(prev => [...prev, ...mediumQuestions.slice(0, 3)]);
-                    setCurrentQuestionIndex(prev => prev + 1);
-                    setQuestionHistory(prev => [...prev, currentQuestionIndex + 1]);
-                    return;
-                }
-            }
-
             // End questionnaire
             navigate('/results', { state: { answers: { ...answers, [currentQuestion.questionId]: value } } });
         } else {
