@@ -1,128 +1,338 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface QuestionnaireAnswers {
-    gameType: string;
-    duration: string;
-    platform: string;
-    mood: string;
-    multiplayer: boolean;
-    genre: string;
-    difficulty: string;
+interface AnswerOption {
+    value: string;
+    label: string;
+    weight: number;
 }
 
-const Questions: React.FC = () => {
-    const navigate = useNavigate();
-    const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState<QuestionnaireAnswers>({
-        gameType: '',
-        duration: '',
-        platform: '',
-        mood: '',
-        multiplayer: false,
-        genre: '',
-        difficulty: ''
-    });
+interface Question {
+    questionId: string;
+    questionText: string;
+    questionType: string;
+    answerOptions: AnswerOption[];
+    importance: string;
+    category: string;
+    branchingLogic: string | null;
+}
 
-    const questions = [
+interface QuestionnaireAnswers {
+    [key: string]: string | string[];
+}
+
+const Questionnaire: React.FC = () => {
+    const navigate = useNavigate();
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
+    const [questionHistory, setQuestionHistory] = useState<number[]>([0]);
+    const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
+
+    const allQuestions: Question[] = [
         {
-            id: 'gameType',
-            question: 'Quel type de jeu préférez-vous ?',
-            options: [
-                { value: 'action', label: '🎯 Action/Aventure' },
-                { value: 'strategy', label: '🧠 Stratégie' },
-                { value: 'puzzle', label: '🧩 Puzzle/Réflexion' },
-                { value: 'rpg', label: '⚔️ RPG/Roleplay' },
-                { value: 'simulation', label: '🏗️ Simulation' },
-                { value: 'sports', label: '⚽ Sport' }
-            ]
+            "questionId": "gaming_experience",
+            "questionText": "How would you describe your gaming experience?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "beginner", "label": "🌱 New to gaming", "weight": 1},
+                {"value": "casual", "label": "🎮 Casual player", "weight": 2},
+                {"value": "experienced", "label": "🏆 Experienced gamer", "weight": 3},
+                {"value": "expert", "label": "🎯 Gaming enthusiast", "weight": 4}
+            ],
+            "importance": "high",
+            "category": "experience_level",
+            "branchingLogic": "if beginner -> show simplified genre questions"
         },
         {
-            id: 'duration',
-            question: 'Combien de temps voulez-vous jouer ?',
-            options: [
-                { value: 'quick', label: '⚡ Session rapide (15-30 min)' },
-                { value: 'medium', label: '⏰ Session moyenne (1-2h)' },
-                { value: 'long', label: '🕰️ Session longue (2h+)' },
-                { value: 'unlimited', label: '♾️ Pas de limite de temps' }
-            ]
+            "questionId": "session_length",
+            "questionText": "How much time do you usually have for a gaming session?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "short", "label": "⏰ 15-30 minutes", "weight": 1},
+                {"value": "medium", "label": "🕒 1-2 hours", "weight": 2},
+                {"value": "long", "label": "🕔 3+ hours", "weight": 3},
+                {"value": "unlimited", "label": "♾️ No time limit", "weight": 4}
+            ],
+            "importance": "high",
+            "category": "time_availability",
+            "branchingLogic": "if short -> prioritize short games"
         },
         {
-            id: 'platform',
-            question: 'Sur quelle plateforme souhaitez-vous jouer ?',
-            options: [
-                { value: 'pc', label: '💻 PC' },
-                { value: 'console', label: '🎮 Console' },
-                { value: 'mobile', label: '📱 Mobile' },
-                { value: 'browser', label: '🌐 Navigateur' }
-            ]
+            "questionId": "gaming_frequency",
+            "questionText": "How often do you play games?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "rare", "label": "🌙 Once in a while", "weight": 1},
+                {"value": "weekly", "label": "📅 A few times a week", "weight": 2},
+                {"value": "daily", "label": "☀️ Daily", "weight": 3}
+            ],
+            "importance": "medium",
+            "category": "time_availability",
+            "branchingLogic": null
         },
         {
-            id: 'mood',
-            question: "Quelle est votre humeur aujourd'hui ?",
-            options: [
-                { value: 'relaxed', label: '😌 Détendu et zen' },
-                { value: 'competitive', label: '🔥 Compétitif' },
-                { value: 'creative', label: '🎨 Créatif' },
-                { value: 'adventure', label: '🗺️ Aventurier' },
-                { value: 'social', label: '👥 Social' }
-            ]
+            "questionId": "platform_preference",
+            "questionText": "Which platform do you prefer to play games on?",
+            "questionType": "multiple_choice",
+            "answerOptions": [
+                {"value": "pc", "label": "💻 PC", "weight": 1},
+                {"value": "console", "label": "🎮 Console (PlayStation, Xbox, Nintendo)", "weight": 1},
+                {"value": "mobile", "label": "📱 Mobile", "weight": 1},
+                {"value": "browser", "label": "🌐 Browser-based", "weight": 1}
+            ],
+            "importance": "high",
+            "category": "platform_preferences",
+            "branchingLogic": "if console -> ask console_type"
         },
         {
-            id: 'multiplayer',
-            question: 'Préférez-vous jouer seul ou avec d\'autres ?',
-            options: [
-                { value: true, label: '👫 Multijoueur' },
-                { value: false, label: '🧑‍💼 Solo' }
-            ]
+            "questionId": "console_type",
+            "questionText": "Which console do you use?",
+            "questionType": "multiple_choice",
+            "answerOptions": [
+                {"value": "playstation", "label": "🎮 PlayStation", "weight": 1},
+                {"value": "xbox", "label": "🎮 Xbox", "weight": 1},
+                {"value": "nintendo", "label": "🎮 Nintendo Switch", "weight": 1}
+            ],
+            "importance": "medium",
+            "category": "platform_preferences",
+            "branchingLogic": null
         },
         {
-            id: 'genre',
-            question: 'Quel genre vous attire le plus ?',
-            options: [
-                { value: 'fantasy', label: '🐉 Fantastique' },
-                { value: 'scifi', label: '🚀 Science-fiction' },
-                { value: 'realistic', label: '🌍 Réaliste' },
-                { value: 'cartoon', label: '🎭 Cartoon/Stylisé' },
-                { value: 'horror', label: '👻 Horreur/Thriller' }
-            ]
+            "questionId": "favorite_genre",
+            "questionText": "What type of game do you enjoy most?",
+            "questionType": "multiple_choice",
+            "answerOptions": [
+                {"value": "action", "label": "⚡ Action/Adventure", "weight": 1},
+                {"value": "rpg", "label": "🗡️ Role-Playing (RPG)", "weight": 1},
+                {"value": "strategy", "label": "♟️ Strategy", "weight": 1},
+                {"value": "puzzle", "label": "🧩 Puzzle", "weight": 1},
+                {"value": "simulation", "label": "🏡 Simulation", "weight": 1},
+                {"value": "sports", "label": "⚽ Sports", "weight": 1}
+            ],
+            "importance": "high",
+            "category": "genre_preferences",
+            "branchingLogic": null
         },
         {
-            id: 'difficulty',
-            question: 'Quel niveau de difficulté recherchez-vous ?',
-            options: [
-                { value: 'easy', label: '🟢 Facile et relaxant' },
-                { value: 'medium', label: '🟡 Modéré' },
-                { value: 'hard', label: '🔴 Difficile et challengeant' },
-                { value: 'variable', label: '⚙️ Difficulté ajustable' }
-            ]
+            "questionId": "avoid_genre",
+            "questionText": "Are there any game types you'd prefer to avoid?",
+            "questionType": "multiple_choice",
+            "answerOptions": [
+                {"value": "horror", "label": "😱 Horror", "weight": 1},
+                {"value": "racing", "label": "🏎️ Racing", "weight": 1},
+                {"value": "fighting", "label": "🥊 Fighting", "weight": 1},
+                {"value": "none", "label": "✅ None, I'm open to all", "weight": 0}
+            ],
+            "importance": "high",
+            "category": "genre_preferences",
+            "branchingLogic": null
+        },
+        {
+            "questionId": "gameplay_style",
+            "questionText": "Do you prefer playing alone or with others?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "solo", "label": "🧑 Solo", "weight": 1},
+                {"value": "coop", "label": "🤝 Cooperative with friends", "weight": 2},
+                {"value": "competitive", "label": "🏅 Competitive multiplayer", "weight": 3}
+            ],
+            "importance": "high",
+            "category": "gameplay_style",
+            "branchingLogic": "if coop or competitive -> ask social_aspects"
+        },
+        {
+            "questionId": "current_mood",
+            "questionText": "How are you feeling right now?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "relaxed", "label": "😌 Relaxed", "weight": 1},
+                {"value": "energetic", "label": "⚡ Energetic", "weight": 2},
+                {"value": "stressed", "label": "😓 Stressed", "weight": 3},
+                {"value": "bored", "label": "😴 Bored", "weight": 4}
+            ],
+            "importance": "medium",
+            "category": "mood_context",
+            "branchingLogic": "if stressed or bored -> prioritize relaxing games"
+        },
+        {
+            "questionId": "difficulty_preference",
+            "questionText": "What level of challenge do you enjoy in games?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "easy", "label": "😊 Easy and relaxing", "weight": 1},
+                {"value": "moderate", "label": "🤔 Moderate challenge", "weight": 2},
+                {"value": "hard", "label": "🔥 Tough but fair", "weight": 3},
+                {"value": "extreme", "label": "💪 Very difficult", "weight": 4}
+            ],
+            "importance": "high",
+            "category": "difficulty_challenge",
+            "branchingLogic": null
+        },
+        {
+            "questionId": "art_style",
+            "questionText": "What visual style do you prefer in games?",
+            "questionType": "multiple_choice",
+            "answerOptions": [
+                {"value": "realistic", "label": "🌍 Realistic", "weight": 1},
+                {"value": "cartoon", "label": "🎨 Cartoon/Animated", "weight": 1},
+                {"value": "pixel", "label": "🖼️ Pixel art", "weight": 1},
+                {"value": "minimalist", "label": "🔲 Minimalist", "weight": 1}
+            ],
+            "importance": "medium",
+            "category": "visual_audio",
+            "branchingLogic": null
+        },
+        {
+            "questionId": "setting_preference",
+            "questionText": "What game world setting excites you most?",
+            "questionType": "multiple_choice",
+            "answerOptions": [
+                {"value": "fantasy", "label": "🧙‍♂️ Fantasy", "weight": 1},
+                {"value": "scifi", "label": "🚀 Sci-Fi", "weight": 1},
+                {"value": "modern", "label": "🏙️ Modern", "weight": 1},
+                {"value": "historical", "label": "🏰 Historical", "weight": 1}
+            ],
+            "importance": "medium",
+            "category": "visual_audio",
+            "branchingLogic": null
+        },
+        {
+            "questionId": "game_length",
+            "questionText": "How long do you prefer your games to be?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "short", "label": "⏱️ Short (1-5 hours)", "weight": 1},
+                {"value": "medium", "label": "🕒 Medium (5-20 hours)", "weight": 2},
+                {"value": "long", "label": "🕰️ Long (20+ hours)", "weight": 3}
+            ],
+            "importance": "high",
+            "category": "game_length",
+            "branchingLogic": null
+        },
+        {
+            "questionId": "learning_curve",
+            "questionText": "How quickly do you want to learn a game's mechanics?",
+            "questionType": "single_choice",
+            "answerOptions": [
+                {"value": "quick", "label": "🚀 Quick and easy", "weight": 1},
+                {"value": "moderate", "label": "📈 Gradual learning", "weight": 2},
+                {"value": "complex", "label": "🧠 Complex and deep", "weight": 3}
+            ],
+            "importance": "medium",
+            "category": "difficulty_challenge",
+            "branchingLogic": "if quick -> avoid complex strategy games"
         }
     ];
 
-    const handleAnswer = (value: string | boolean) => {
-        const questionId = questions[currentQuestion].id as keyof QuestionnaireAnswers;
+    useEffect(() => {
+        // Initialize with essential questions (high importance)
+        const essentialQuestions = allQuestions.filter(q => q.importance === 'high');
+        setAvailableQuestions(essentialQuestions);
+    }, []);
+
+    const shouldShowQuestion = (questionId: string): boolean => {
+        const platformAnswer = answers.platform_preference;
+
+        // Show console_type only if console is selected
+        if (questionId === 'console_type') {
+            return Array.isArray(platformAnswer) ? platformAnswer.includes('console') : platformAnswer === 'console';
+        }
+
+        return true;
+    };
+
+    const getNextQuestionIndex = (): number => {
+        let nextIndex = currentQuestionIndex + 1;
+
+        // Skip questions based on branching logic
+        while (nextIndex < availableQuestions.length) {
+            const nextQuestion = availableQuestions[nextIndex];
+            if (shouldShowQuestion(nextQuestion.questionId)) {
+                return nextIndex;
+            }
+            nextIndex++;
+        }
+
+        return nextIndex; // End of questionnaire
+    };
+
+    const handleAnswer = (value: string | string[]) => {
+        const currentQuestion = availableQuestions[currentQuestionIndex];
+
         setAnswers(prev => ({
             ...prev,
-            [questionId]: value
+            [currentQuestion.questionId]: value
         }));
 
-        if (currentQuestion < questions.length - 1) {
-            setCurrentQuestion(prev => prev + 1);
+        const nextIndex = getNextQuestionIndex();
+
+        if (nextIndex >= availableQuestions.length) {
+            // Add some medium importance questions if questionnaire is too short
+            if (Object.keys(answers).length < 8) {
+                const mediumQuestions = allQuestions.filter(q =>
+                    q.importance === 'medium' && !availableQuestions.find(aq => aq.questionId === q.questionId)
+                );
+                if (mediumQuestions.length > 0) {
+                    setAvailableQuestions(prev => [...prev, ...mediumQuestions.slice(0, 3)]);
+                    setCurrentQuestionIndex(prev => prev + 1);
+                    setQuestionHistory(prev => [...prev, currentQuestionIndex + 1]);
+                    return;
+                }
+            }
+
+            // End questionnaire
+            navigate('/results', { state: { answers: { ...answers, [currentQuestion.questionId]: value } } });
         } else {
-            // Questionnaire terminé - redirection vers les résultats
-            navigate('/results', { state: { answers } });
+            setCurrentQuestionIndex(nextIndex);
+            setQuestionHistory(prev => [...prev, nextIndex]);
+        }
+    };
+
+    const handleMultipleChoice = (value: string, isSelected: boolean) => {
+        const currentQuestion = availableQuestions[currentQuestionIndex];
+        const currentAnswers = answers[currentQuestion.questionId] as string[] || [];
+
+        let newAnswers: string[];
+        if (isSelected) {
+            newAnswers = currentAnswers.filter(answer => answer !== value);
+        } else {
+            newAnswers = [...currentAnswers, value];
+        }
+
+        setAnswers(prev => ({
+            ...prev,
+            [currentQuestion.questionId]: newAnswers
+        }));
+    };
+
+    const proceedWithMultipleChoice = () => {
+        const currentQuestion = availableQuestions[currentQuestionIndex];
+        const currentAnswers = answers[currentQuestion.questionId] as string[];
+
+        if (currentAnswers && currentAnswers.length > 0) {
+            handleAnswer(currentAnswers);
         }
     };
 
     const goBack = () => {
-        if (currentQuestion > 0) {
-            setCurrentQuestion(prev => prev - 1);
+        if (questionHistory.length > 1) {
+            const newHistory = [...questionHistory];
+            newHistory.pop();
+            const previousIndex = newHistory[newHistory.length - 1];
+            setCurrentQuestionIndex(previousIndex);
+            setQuestionHistory(newHistory);
         } else {
             navigate('/');
         }
     };
 
-    const progressPercentage = ((currentQuestion + 1) / questions.length) * 100;
+    if (availableQuestions.length === 0) {
+        return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
+    }
+
+    const currentQuestion = availableQuestions[currentQuestionIndex];
+    const progressPercentage = ((currentQuestionIndex + 1) / availableQuestions.length) * 100;
+    const currentMultipleAnswers = answers[currentQuestion.questionId] as string[] || [];
 
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 py-16 overflow-hidden">
@@ -139,7 +349,7 @@ const Questions: React.FC = () => {
                     ></div>
                 </div>
                 <p className="text-center text-sm text-gray-400 mt-2">
-                    Question {currentQuestion + 1} sur {questions.length}
+                    Question {currentQuestionIndex + 1} of {availableQuestions.length}
                 </p>
             </div>
 
@@ -147,67 +357,79 @@ const Questions: React.FC = () => {
             <div className="relative z-10 max-w-4xl mx-auto text-center animate-in fade-in-0 slide-in-from-bottom-8 duration-700">
                 {/* Question */}
                 <div className="mb-12">
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-purple-200 leading-tight tracking-tight drop-shadow-2xl mb-6">
-                        {questions[currentQuestion].question}
+                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-purple-200 leading-tight tracking-tight drop-shadow-2xl mb-6">
+                        {currentQuestion.questionText}
                     </h1>
+                    {currentQuestion.questionType === 'multiple_choice' && (
+                        <p className="text-gray-400 text-lg mb-4">Select all that apply</p>
+                    )}
                 </div>
 
                 {/* Options */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto mb-12">
-                    {questions[currentQuestion].options.map((option, index) => (
-                        <button
-                            key={index}
-                            onClick={() => handleAnswer(option.value)}
-                            className="
-                                relative
-                                p-6
-                                bg-gray-800/70
-                                backdrop-blur-sm
-                                text-white
-                                font-semibold
-                                text-lg
-                                rounded-xl
-                                border
-                                border-gray-600/50
-                                transition-all
-                                duration-300
-                                ease-in-out
-                                hover:bg-gray-700/80
-                                hover:border-blue-400/50
-                                hover:scale-105
-                                hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]
-                                focus:outline-none
-                                focus:ring-4
-                                focus:ring-blue-300/30
-                                group
-                                animate-in
-                                fade-in-0
-                                slide-in-from-bottom-4
-                                duration-500
-                            "
-                            style={{
-                                animationDelay: `${index * 100}ms`,
-                                animationFillMode: 'both'
-                            }}
-                        >
-                            <span className="relative z-10 block text-left">
-                                {option.label}
-                            </span>
-                            <div className="
-                                absolute
-                                inset-0
-                                bg-gradient-to-r
-                                from-blue-500/20
-                                to-purple-500/20
-                                rounded-xl
-                                opacity-0
-                                group-hover:opacity-100
-                                transition-opacity
-                                duration-300
-                                -z-10
-                            "></div>
-                        </button>
-                    ))}
+                    {currentQuestion.answerOptions.map((option, index) => {
+                        const isSelected = currentQuestion.questionType === 'multiple_choice'
+                            ? currentMultipleAnswers.includes(option.value)
+                            : false;
+
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => {
+                                    if (currentQuestion.questionType === 'multiple_choice') {
+                                        handleMultipleChoice(option.value, isSelected);
+                                    } else {
+                                        handleAnswer(option.value);
+                                    }
+                                }}
+                                className={`
+                                    relative
+                                    p-6
+                                    backdrop-blur-sm
+                                    font-semibold
+                                    text-lg
+                                    rounded-xl
+                                    border
+                                    transition-all
+                                    duration-300
+                                    ease-in-out
+                                    hover:scale-105
+                                    focus:outline-none
+                                    focus:ring-4
+                                    focus:ring-blue-300/30
+                                    group
+                                    animate-in
+                                    fade-in-0
+                                    slide-in-from-bottom-4
+                                    duration-500
+                                    ${isSelected
+                                    ? 'bg-blue-600/80 border-blue-400 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]'
+                                    : 'bg-gray-800/70 border-gray-600/50 text-white hover:bg-gray-700/80 hover:border-blue-400/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]'
+                                }
+                                `}
+                                style={{
+                                    animationDelay: `${index * 100}ms`,
+                                    animationFillMode: 'both'
+                                }}
+                            >
+                                <span className="relative z-10 block text-left">
+                                    {option.label}
+                                </span>
+                                <div className={`
+                                    absolute
+                                    inset-0
+                                    bg-gradient-to-r
+                                    from-blue-500/20
+                                    to-purple-500/20
+                                    rounded-xl
+                                    transition-opacity
+                                    duration-300
+                                    -z-10
+                                    ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+                                `}></div>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Navigation */}
@@ -232,8 +454,35 @@ const Questions: React.FC = () => {
                             focus:ring-gray-400/30
                         "
                     >
-                        {currentQuestion === 0 ? '← Retour' : '← Précédent'}
+                        {questionHistory.length <= 1 ? '← Back to Home' : '← Previous'}
                     </button>
+
+                    {currentQuestion.questionType === 'multiple_choice' && (
+                        <button
+                            onClick={proceedWithMultipleChoice}
+                            disabled={currentMultipleAnswers.length === 0}
+                            className="
+                                px-6 py-3
+                                bg-blue-600/70
+                                backdrop-blur-sm
+                                text-white
+                                font-medium
+                                rounded-lg
+                                border
+                                border-blue-500/50
+                                transition-all
+                                duration-300
+                                hover:bg-blue-500/80
+                                focus:outline-none
+                                focus:ring-4
+                                focus:ring-blue-400/30
+                                disabled:opacity-50
+                                disabled:cursor-not-allowed
+                            "
+                        >
+                            Continue →
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -252,4 +501,4 @@ const Questions: React.FC = () => {
     );
 };
 
-export default Questions;
+export default Questionnaire;
