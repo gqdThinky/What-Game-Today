@@ -59,7 +59,7 @@ export const BackgroundDots: React.FC<BackgroundDotsProps> = ({
 
     return (
         <div className="absolute inset-0 overflow-hidden pointer-events-none animated-dots-container">
-            {/* Image de fond */}
+            {/* Background image (dots) */}
             {backgroundImage && (
                 <div
                     className="absolute inset-0"
@@ -72,7 +72,7 @@ export const BackgroundDots: React.FC<BackgroundDotsProps> = ({
                 />
             )}
 
-            {/* Dots animés */}
+            {/* Animated dots */}
             {dots.map((dot) => (
                 <div
                     key={dot.id}

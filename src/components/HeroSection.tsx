@@ -1,9 +1,16 @@
 import type React from 'react';
 import GlowingButton from "./Buttons.tsx";
+import { motion } from "framer-motion";
 
 export const HeroSection: React.FC = () => {
     return (
-        <section className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 py-16 overflow-hidden">
+        <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 py-16 overflow-hidden"
+        >
             {/* Content */}
             <div className="relative z-10 max-w-5xl mx-auto text-center">
                 {/* Main Heading */}
@@ -44,6 +51,6 @@ export const HeroSection: React.FC = () => {
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
             </div>
-        </section>
+        </motion.section>
     );
 };
