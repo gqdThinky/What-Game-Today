@@ -2,7 +2,7 @@ import type React from 'react';
 import GlowingButton from "./Buttons.tsx";
 import { motion } from "framer-motion";
 
-export const HeroSection: React.FC = () => {
+export const MainMenu: React.FC = () => {
     return (
         <motion.section
             initial={{ opacity: 0 }}

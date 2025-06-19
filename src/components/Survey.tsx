@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import questionsData from '../data/questions.json';
+import {SurveyStorage, type SurveyAnswers, type SavedSurveyData} from '../utils/storage';
 
 interface AnswerOption {
     value: string;
@@ -19,10 +20,6 @@ interface Question {
     branchingLogic: string | null;
 }
 
-interface QuestionnaireAnswers {
-    [key: string]: string | string[] | null;
-}
-
 interface QuestionsData {
     questions: Question[];
 }
@@ -30,33 +27,86 @@ interface QuestionsData {
 const Survey: React.FC = () => {
     const navigate = useNavigate();
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
+    const [answers, setAnswers] = useState<SurveyAnswers>({});
     const [questionHistory, setQuestionHistory] = useState<number[]>([0]);
     const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showResumeDialog, setShowResumeDialog] = useState(false);
+    const [showAutoSave, setShowAutoSave] = useState(true);
 
     useEffect(() => {
         const loadQuestions = () => {
             try {
-                // Cast explicite du JSON importé
                 const data = questionsData as QuestionsData;
                 const allQuestions = data.questions;
 
-                // Filtrer et organiser les questions comme avant
                 const initialQuestions = allQuestions.filter(q => q.importance === 'high');
                 const mediumQuestions = allQuestions.filter(q => q.importance === 'medium');
 
                 const combinedQuestions = Array.from(new Set([...initialQuestions, ...mediumQuestions]));
                 setAvailableQuestions(combinedQuestions);
+
+                checkForSavedProgress();
+
                 setIsLoading(false);
             } catch (error) {
-                console.error('Erreur lors du chargement des questions:', error);
+                console.error('Error while loading questions:', error);
                 setIsLoading(false);
             }
         };
 
         loadQuestions();
     }, []);
+
+    const checkForSavedProgress = () => {
+        if (SurveyStorage.hasInProgressQuestionnaire()) {
+            setShowResumeDialog(true);
+        }
+    };
+
+    const resumeQuestionnaire = () => {
+        const saved = SurveyStorage.getAnswers();
+        if (saved) {
+            setAnswers(saved.answers);
+            if (saved.currentQuestionIndex !== undefined) {
+                setCurrentQuestionIndex(saved.currentQuestionIndex);
+
+                const history = Array.from({ length: saved.currentQuestionIndex + 1 }, (_, i) => i);
+                setQuestionHistory(history);
+            }
+        }
+        setShowResumeDialog(false);
+    };
+
+    const startFresh = () => {
+        SurveyStorage.clearAnswers();
+        setShowResumeDialog(false);
+        setAnswers({});
+        setCurrentQuestionIndex(0);
+        setQuestionHistory([0]);
+    };
+
+    useEffect(() => {
+        if (Object.keys(answers).length > 0) {
+            const surveyData: SavedSurveyData = {
+                answers: answers,
+                timestamp: Date.now(),
+                isCompleted: false,
+                currentQuestionIndex: currentQuestionIndex,
+            };
+            SurveyStorage.updateAnswers(surveyData, currentQuestionIndex);
+            setShowAutoSave(true); // Show notification when answers are saved
+        }
+    }, [answers, currentQuestionIndex]);
+
+    useEffect(() => {
+        if (showAutoSave) {
+            const timer = setTimeout(() => {
+                setShowAutoSave(false);
+            }, 3000); // Hide after 3 seconds
+            return () => clearTimeout(timer); // Cleanup timer on unmount or state change
+        }
+    }, [showAutoSave]);
 
     const shouldShowQuestion = (questionId: string): boolean => {
         const platformAnswer = answers.platform_preference;
@@ -84,16 +134,18 @@ const Survey: React.FC = () => {
 
     const handleAnswer = (value: string | string[] | null) => {
         const currentQuestion = availableQuestions[currentQuestionIndex];
-
-        setAnswers(prev => ({
-            ...prev,
+        const updatedAnswers = {
+            ...answers,
             [currentQuestion.questionId]: value
-        }));
+        };
+
+        setAnswers(updatedAnswers);
 
         const nextIndex = getNextQuestionIndex();
 
         if (nextIndex >= availableQuestions.length) {
-            navigate('/results', { state: { answers: { ...answers, [currentQuestion.questionId]: value } } });
+            SurveyStorage.markAsCompleted(updatedAnswers);
+            navigate('/results', { state: { answers: updatedAnswers } });
         } else {
             setCurrentQuestionIndex(nextIndex);
             setQuestionHistory(prev => [...prev, nextIndex]);
@@ -142,7 +194,45 @@ const Survey: React.FC = () => {
         }
     };
 
-    // Affichage de chargement
+    if (showResumeDialog) {
+        return (
+            <div className="min-h-screen flex items-center justify-center px-6">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-gray-800/90 backdrop-blur-xl border border-gray-600/50 rounded-2xl p-8 max-w-md mx-auto text-center"
+                >
+                    <div className="mb-6">
+                        <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">🎮</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-2">
+                            Session in progress detected!
+                        </h2>
+                        <p className="text-gray-400">
+                            You have a survey in progress. Would you like to continue where you left off?
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                            onClick={resumeQuestionnaire}
+                            className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                        >
+                            Continue
+                        </button>
+                        <button
+                            onClick={startFresh}
+                            className="flex-1 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
+                        >
+                            Start again
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
+
     if (isLoading || availableQuestions.length === 0) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -167,11 +257,29 @@ const Survey: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 py-16 overflow-hidden"
         >
+            {/* Automatic backup */}
+            <AnimatePresence>
+                {showAutoSave && (
+                    <motion.div
+                        initial={{ opacity: 1 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="fixed top-4 right-4 z-30"
+                    >
+                        <div className="bg-green-500/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm flex items-center space-x-2 opacity-50">
+                            <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+                            <span>Auto saving..</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Background Elements */}
             <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-30 blur-3xl animate-pulse"></div>
             <div className="absolute -bottom-20 -right-20 w-60 h-60 rounded-full bg-gradient-to-tl from-purple-500/20 to-pink-500/20 opacity-25 blur-3xl animate-pulse delay-1000"></div>
 
-            {/* Enhanced Glassmorphism Progress Bar */}
+            {/* Progress Bar */}
             <div className="fixed top-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-20 px-6">
                 <div className="relative">
                     <div className="
@@ -243,15 +351,9 @@ const Survey: React.FC = () => {
                             ></div>
                         </div>
                     </div>
-                    <div className="absolute -inset-4 pointer-events-none">
-                        <div className="absolute top-2 left-4 w-1 h-1 bg-blue-400 rounded-full opacity-60 animate-ping"></div>
-                        <div className="absolute bottom-2 right-6 w-0.5 h-0.5 bg-purple-400 rounded-full opacity-70 animate-ping delay-1000"></div>
-                        <div className="absolute top-1/2 right-2 w-0.5 h-0.5 bg-pink-400 rounded-full opacity-50 animate-ping delay-500"></div>
-                    </div>
                 </div>
             </div>
 
-            {/* Main Content with Animation */}
             <div className="relative z-10 max-w-4xl mx-auto text-center mt-32">
                 <AnimatePresence mode="wait">
                     <motion.div

@@ -1,4 +1,4 @@
-import { HeroSection } from "./components/HeroSection.tsx";
+import { MainMenu } from "./components/MainMenu.tsx";
 import { BackgroundDots } from "./components/Background.tsx";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Survey from "./components/Survey.tsx";
@@ -13,7 +13,7 @@ function App() {
                 <BackgroundDots numberOfDots={100} backgroundImage={backgroundPng} />
                 <AnimatePresence mode="wait">
                     <Routes>
-                        <Route path="/" element={<HeroSection />} />
+                        <Route path="/" element={<MainMenu />} />
                         <Route path="/survey" element={<Survey />} />
                         <Route path="/results" element={<Results />} />
                     </Routes>
