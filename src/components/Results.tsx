@@ -38,21 +38,6 @@ const Results: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedGame, setSelectedGame] = useState<SteamGame | null>(null);
 
-    // Mapping des genres pour l'API Steam
-    const genreMapping: { [key: string]: string[] } = {
-        action: ['Action', 'Adventure'],
-        rpg: ['RPG', 'Role-Playing'],
-        strategy: ['Strategy'],
-        puzzle: ['Puzzle', 'Casual'],
-        simulation: ['Simulation'],
-        sports: ['Sports', 'Racing'],
-        horror: ['Horror'],
-        racing: ['Racing'],
-        fighting: ['Fighting']
-    };
-
-
-
     // Fonction pour chercher des jeux via une API proxy (car Steam API a des limitations CORS)
     const searchGames = async () => {
         try {
