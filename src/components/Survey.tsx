@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
+import questionsData from '../data/questions.json';
 
 interface AnswerOption {
     value: string;
@@ -22,202 +23,39 @@ interface QuestionnaireAnswers {
     [key: string]: string | string[] | null;
 }
 
+interface QuestionsData {
+    questions: Question[];
+}
+
 const Survey: React.FC = () => {
     const navigate = useNavigate();
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
     const [questionHistory, setQuestionHistory] = useState<number[]>([0]);
     const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
-
-    const allQuestions: Question[] = [
-        {
-            "questionId": "gaming_experience",
-            "questionText": "How would you describe your gaming experience?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "beginner", "label": "🌱 New to gaming", "weight": 1},
-                {"value": "casual", "label": "🎮 Casual player", "weight": 2},
-                {"value": "experienced", "label": "🏆 Experienced gamer", "weight": 3},
-                {"value": "expert", "label": "🎯 Gaming enthusiast", "weight": 4}
-            ],
-            "importance": "high",
-            "category": "experience_level",
-            "branchingLogic": "if beginner -> show simplified genre questions"
-        },
-        {
-            "questionId": "session_length",
-            "questionText": "How much time do you usually have for a gaming session?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "short", "label": "⏰ 15-30 minutes", "weight": 1},
-                {"value": "medium", "label": "🕒 1-2 hours", "weight": 2},
-                {"value": "long", "label": "🕔 3+ hours", "weight": 3},
-                {"value": "unlimited", "label": "♾️ No time limit", "weight": 4}
-            ],
-            "importance": "high",
-            "category": "time_availability",
-            "branchingLogic": "if short -> prioritize short games"
-        },
-        {
-            "questionId": "gaming_frequency",
-            "questionText": "How often do you play games?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "rare", "label": "🌙 Once in a while", "weight": 1},
-                {"value": "weekly", "label": "📅 A few times a week", "weight": 2},
-                {"value": "daily", "label": "☀️ Daily", "weight": 3}
-            ],
-            "importance": "medium",
-            "category": "time_availability",
-            "branchingLogic": null
-        },
-        {
-            "questionId": "platform_preference",
-            "questionText": "Which platform do you prefer to play games on?",
-            "questionType": "multiple_choice",
-            "answerOptions": [
-                {"value": "pc", "label": "💻 PC", "weight": 1},
-                {"value": "console", "label": "🎮 Console (PlayStation, Xbox, Nintendo)", "weight": 1},
-                {"value": "mobile", "label": "📱 Mobile", "weight": 1},
-                {"value": "browser", "label": "🌐 Browser-based", "weight": 1}
-            ],
-            "importance": "high",
-            "category": "platform_preferences",
-            "branchingLogic": "if console -> ask console_type"
-        },
-        {
-            "questionId": "console_type",
-            "questionText": "Which console do you use?",
-            "questionType": "multiple_choice",
-            "answerOptions": [
-                {"value": "playstation", "label": "🎮 PlayStation", "weight": 1},
-                {"value": "xbox", "label": "🎮 Xbox", "weight": 1},
-                {"value": "nintendo", "label": "🎮 Nintendo Switch", "weight": 1}
-            ],
-            "importance": "medium",
-            "category": "platform_preferences",
-            "branchingLogic": null
-        },
-        {
-            "questionId": "favorite_genre",
-            "questionText": "What type of game do you enjoy most?",
-            "questionType": "multiple_choice",
-            "answerOptions": [
-                {"value": "action", "label": "⚡ Action/Adventure", "weight": 1},
-                {"value": "rpg", "label": "🗡️ Role-Playing (RPG)", "weight": 1},
-                {"value": "strategy", "label": "♟️ Strategy", "weight": 1},
-                {"value": "puzzle", "label": "🧩 Puzzle", "weight": 1},
-                {"value": "simulation", "label": "🏡 Simulation", "weight": 1},
-                {"value": "sports", "label": "⚽ Sports", "weight": 1}
-            ],
-            "importance": "high",
-            "category": "genre_preferences",
-            "branchingLogic": null
-        },
-        {
-            "questionId": "avoid_genre",
-            "questionText": "Are there any game types you'd prefer to avoid?",
-            "questionType": "multiple_choice",
-            "answerOptions": [
-                {"value": "horror", "label": "😱 Horror", "weight": 1},
-                {"value": "racing", "label": "🏎️ Racing", "weight": 1},
-                {"value": "fighting", "label": "🥊 Fighting", "weight": 1},
-                {"value": "none", "label": "✅ None, I'm open to all", "weight": 0}
-            ],
-            "importance": "high",
-            "category": "genre_preferences",
-            "branchingLogic": null
-        },
-        {
-            "questionId": "gameplay_style",
-            "questionText": "Do you prefer playing alone or with others?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "solo", "label": "🧑 Solo", "weight": 1},
-                {"value": "coop", "label": "🤝 Cooperative with friends", "weight": 2},
-                {"value": "competitive", "label": "🏅 Competitive multiplayer", "weight": 3}
-            ],
-            "importance": "high",
-            "category": "gameplay_style",
-            "branchingLogic": "if coop or competitive -> ask social_aspects"
-        },
-        {
-            "questionId": "current_mood",
-            "questionText": "How are you feeling right now?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "relaxed", "label": "😌 Relaxed", "weight": 1},
-                {"value": "energetic", "label": "⚡ Energetic", "weight": 2},
-                {"value": "stressed", "label": "😓 Stressed", "weight": 3},
-                {"value": "bored", "label": "😴 Bored", "weight": 4}
-            ],
-            "importance": "medium",
-            "category": "mood_context",
-            "branchingLogic": "if stressed or bored -> prioritize relaxing games"
-        },
-        {
-            "questionId": "difficulty_preference",
-            "questionText": "What level of challenge do you enjoy in games?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "easy", "label": "😊 Easy and relaxing", "weight": 1},
-                {"value": "moderate", "label": "🤔 Moderate challenge", "weight": 2},
-                {"value": "hard", "label": "🔥 Tough but fair", "weight": 3},
-                {"value": "extreme", "label": "💪 Very difficult", "weight": 4}
-            ],
-            "importance": "high",
-            "category": "difficulty_challenge",
-            "branchingLogic": null
-        },
-        {
-            "questionId": "art_style",
-            "questionText": "What visual style do you prefer in games?",
-            "questionType": "multiple_choice",
-            "answerOptions": [
-                {"value": "realistic", "label": "🌍 Realistic", "weight": 1},
-                {"value": "cartoon", "label": "🎨 Cartoon/Animated", "weight": 1},
-                {"value": "pixel", "label": "🖼️ Pixel art", "weight": 1},
-                {"value": "minimalist", "label": "🔲 Minimalist", "weight": 1}
-            ],
-            "importance": "medium",
-            "category": "visual_audio",
-            "branchingLogic": null
-        },
-        {
-            "questionId": "setting_preference",
-            "questionText": "What game world setting excites you most?",
-            "questionType": "multiple_choice",
-            "answerOptions": [
-                {"value": "fantasy", "label": "🧙‍♂️ Fantasy", "weight": 1},
-                {"value": "scifi", "label": "🚀 Sci-Fi", "weight": 1},
-                {"value": "modern", "label": "🏙️ Modern", "weight": 1},
-                {"value": "historical", "label": "🏰 Historical", "weight": 1}
-            ],
-            "importance": "medium",
-            "category": "visual_audio",
-            "branchingLogic": null
-        },
-        {
-            "questionId": "game_length",
-            "questionText": "How long do you prefer your games to be?",
-            "questionType": "single_choice",
-            "answerOptions": [
-                {"value": "short", "label": "⏱️ Short (1-5 hours)", "weight": 1},
-                {"value": "medium", "label": "🕒 Medium (5-20 hours)", "weight": 2},
-                {"value": "long", "label": "🕰️ Long (20+ hours)", "weight": 3}
-            ],
-            "importance": "high",
-            "category": "game_length",
-            "branchingLogic": null
-        },
-    ];
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const initialQuestions = allQuestions.filter(q => q.importance === 'high');
-        const mediumQuestions = allQuestions.filter(q => q.importance === 'medium');
+        const loadQuestions = () => {
+            try {
+                // Cast explicite du JSON importé
+                const data = questionsData as QuestionsData;
+                const allQuestions = data.questions;
 
-        const combinedQuestions = Array.from(new Set([...initialQuestions, ...mediumQuestions]));
-        setAvailableQuestions(combinedQuestions);
+                // Filtrer et organiser les questions comme avant
+                const initialQuestions = allQuestions.filter(q => q.importance === 'high');
+                const mediumQuestions = allQuestions.filter(q => q.importance === 'medium');
+
+                const combinedQuestions = Array.from(new Set([...initialQuestions, ...mediumQuestions]));
+                setAvailableQuestions(combinedQuestions);
+                setIsLoading(false);
+            } catch (error) {
+                console.error('Erreur lors du chargement des questions:', error);
+                setIsLoading(false);
+            }
+        };
+
+        loadQuestions();
     }, []);
 
     const shouldShowQuestion = (questionId: string): boolean => {
@@ -304,8 +142,16 @@ const Survey: React.FC = () => {
         }
     };
 
-    if (availableQuestions.length === 0) {
-        return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
+    // Affichage de chargement
+    if (isLoading || availableQuestions.length === 0) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-white text-lg">Loading questions...</p>
+                </div>
+            </div>
+        );
     }
 
     const currentQuestion = availableQuestions[currentQuestionIndex];
